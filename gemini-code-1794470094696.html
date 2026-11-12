@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tarjetas Virtuales Interactivas</title>
+  <!-- Fuentes elegantes -->
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Swiper JS para el carrusel con 3 animaciones -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <!-- Librería QR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #fff0f5;
+      --card-bg: #ffffff;
+      --accent: #e5989b;
+      --accent-dark: #b5838d;
+      --text-color: #4a3b40;
+      --particle-color: #ffb4a2;
+    }
+
+    /* TEMAS PASTELES */
+    body.tema-rosa {
+      --bg-color: #fff0f5;
+      --card-bg: #ffffff;
+      --accent: #f4acb7;
+      --accent-dark: #9d8189;
+      --text-color: #4a3b40;
+      --particle-color: #ffcad4;
+    }
+    body.tema-lavanda {
+      --bg-color: #f3effb;
+      --card-bg: #ffffff;
+      --accent: #b8a1d9;
+      --accent-dark: #7b6699;
+      --text-color: #3b334a;
+      --particle-color: #d8c7f2;
+    }
+    body.tema-salvia {
+      --bg-color: #f1f7f3;
+      --card-bg: #ffffff;
+      --accent: #95b8a4;
+      --accent-dark: #5c7a69;
+      --text-color: #2f3e35;
+      --particle-color: #f7cad0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      transition: all 0.5s ease;
+      overflow-x: hidden;
+    }
+
+    h1, h2, .serif { font-family: 'Cormorant Garamond', serif; }
+
+    /* PARTÍCULAS ANIMADAS DE FONDO */
+    .particles {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .particle {
+      position: absolute; bottom: -20px;
+      background: var(--particle-color);
+      border-radius: 50%; opacity: 0.6;
+      animation: floatUp linear infinite;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 0.7; }
+      100% { transform: translateY(-110vh) scale(1.4); opacity: 0; }
+    }
+
+    /* CONTENEDORES */
+    .container {
+      position: relative; z-index: 1;
+      max-width: 680px; margin: 30px auto; padding: 20px;
+    }
+    .panel {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.06);
+      border: 1px solid rgba(255,255,255,0.8);
+    }
+    .hidden { display: none !important; }
+
+    /* FORMULARIOS Y BOTONES */
+    label { display: block; font-weight: 600; margin: 14px 0 6px; font-size: 0.92rem; }
+    input, select, textarea {
+      width: 100%; padding: 12px; border-radius: 12px;
+      border: 1.5px solid #e2e2e2; font-family: inherit; font-size: 0.95rem;
+      outline: none; transition: border 0.3s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    button {
+      background: var(--accent-dark); color: #fff; border: none;
+      padding: 13px 22px; border-radius: 12px; font-weight: 600;
+      cursor: pointer; font-size: 1rem; width: 100%; margin-top: 16px;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    button:hover { opacity: 0.92; transform: translateY(-1px); }
+    button.secondary { background: #888; margin-top: 8px; }
+
+    /* SOBRE INTERACTIVO DE APERTURA */
+    .envelope-screen {
+      position: fixed; inset: 0; background: var(--bg-color);
+      z-index: 99; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 20px; transition: opacity 0.8s ease, visibility 0.8s;
+    }
+    .envelope-screen.opened { opacity: 0; visibility: hidden; pointer-events: none; }
+    .envelope-box {
+      width: 220px; height: 150px; background: var(--accent);
+      border-radius: 16px; position: relative; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.12);
+      animation: pulse 2s infinite;
+    }
+    .envelope-box::after {
+      content: "💌 Toca para abrir"; color: white; font-weight: 600; font-size: 1.1rem;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    /* CONTADOR DE DÍAS */
+    .counter-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+      margin: 20px 0; text-align: center;
+    }
+    .counter-box {
+      background: var(--bg-color); padding: 12px 6px; border-radius: 14px;
+    }
+    .counter-box span {
+      display: block; font-size: 1.5rem; font-weight: 700; color: var(--accent-dark);
+    }
+    .counter-box small { font-size: 0.75rem; text-transform: uppercase; }
+
+    /* CARRUSEL SWIPER */
+    .swiper { width: 100%; height: 340px; border-radius: 18px; margin: 20px 0; }
+    .swiper-slide img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 18px;
+    }
+
+    /* SORPRESA INTERACTIVA */
+    .secret-note {
+      background: var(--bg-color); padding: 18px; border-radius: 16px;
+      text-align: center; cursor: pointer; margin-top: 20px;
+      border: 1.5px dashed var(--accent-dark);
+    }
+
+    /* QR CONTENEDOR */
+    #qr-container {
+      display: flex; flex-direction: column; align-items: center;
+      margin-top: 20px; padding: 15px; background: #fafafa; border-radius: 16px;
+    }
+    .photo-preview-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px;
+    }
+    .photo-preview-grid img { width: 100%; height: 50px; object-fit: cover; border-radius: 6px; }
+  </style>
+</head>
+<body class="tema-rosa">
+
+  <div class="particles" id="particles"></div>
+
+  <!-- 1. PANTALLA DE LOGIN (SOLO SUSCRIPTORES AUTORIZADOS) -->
+  <div class="container" id="view-login">
+    <div class="panel">
+      <h1 style="text-align:center; font-size:2.2rem;">Acceso Suscriptores</h1>
+      <p style="text-align:center; opacity:0.8; margin-bottom:15px;">Ingresa con el usuario único asignado por el administrador</p>
+      <label>Correo / Usuario asignado</label>
+      <input type="email" id="login-email" placeholder="ejemplo@cliente.com" />
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" />
+      <button onclick="loginUser()">Entrar a mi Editor</button>
+      <p id="login-error" style="color:#d9534f; margin-top:10px; text-align:center;"></p>
+    </div>
+  </div>
+
+  <!-- 2. PANEL EDITOR DE TARJETA (CLIENTE AUTORIZADO) -->
+  <div class="container hidden" id="view-editor">
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>Personaliza tu Tarjeta</h2>
+        <button class="secondary" style="width:auto; padding:8px 14px; margin:0;" onclick="logoutUser()">Salir</button>
+      </div>
+
+      <label>Nombre único para el enlace (ej: juan-y-maria)</label>
+      <input type="text" id="edit-slug" placeholder="sin-espacios-ni-acentos" />
+
+      <label>Tema Pastel</label>
+      <select id="edit-theme" onchange="applyTheme(this.value)">
+        <option value="tema-rosa">🌸 Rosa Cuarzo & Crema</option>
+        <option value="tema-lavanda">💜 Lavanda Suave & Nube</option>
+        <option value="tema-salvia">🌿 Verde Salvia & Durazno</option>
+      </select>
+
+      <label>Título de la Tarjeta</label>
+      <input type="text" id="edit-title" placeholder="Nuestra Historia de Amor" />
+
+      <label>Fecha de inicio de la relación</label>
+      <input type="date" id="edit-date" />
+
+      <label>Mensaje Principal</label>
+      <textarea id="edit-message" rows="4" placeholder="Escribe tu dedicatoria especial..."></textarea>
+
+      <label>Mensaje Secreto (se revela al tocarlo)</label>
+      <input type="text" id="edit-secret" placeholder="¡Te amo hasta el infinito!" />
+
+      <label>Animación del Carrusel de Fotos</label>
+      <select id="edit-anim">
+        <option value="slide">Deslizamiento Suave (Slide)</option>
+        <option value="fade">Desvanecimiento Romántico (Fade)</option>
+        <option value="cards">Baraja de Cartas (Cards)</option>
+      </select>
+
+      <label>Subir Fotografías (Máximo 25 fotos)</label>
+      <input type="file" id="edit-photos" accept="image/*" multiple onchange="previewSelectedPhotos(event)" />
+      <small id="photo-count-info">0 / 25 fotos seleccionadas</small>
+      <div class="photo-preview-grid" id="photo-previews"></div>
+
+      <label>Música de Fondo (Enlace de YouTube o subir MP3)</label>
+      <select id="edit-music-type" onchange="toggleMusicInputs()">
+        <option value="none">Sin música</option>
+        <option value="youtube">Enlace de YouTube</option>
+        <option value="mp3">Subir archivo MP3 desde dispositivo</option>
+      </select>
+      <input type="text" id="edit-yt-url" class="hidden" placeholder="Pega aquí el enlace de YouTube..." style="margin-top:8px;" />
+      <input type="file" id="edit-mp3-file" class="hidden" accept="audio/mp3,audio/mpeg" style="margin-top:8px;" />
+
+      <button id="btn-save" onclick="saveCard()">Guardar y Generar Tarjeta + QR</button>
+      <p id="save-status" style="text-align:center; margin-top:10px; font-weight:600;"></p>
+
+      <!-- RESULTADO CON QR ÚNICO -->
+      <div id="qr-container" class="hidden">
+        <h3>¡Tu tarjeta está lista!</h3>
+        <div id="qrcode" style="margin:15px 0;"></div>
+        <a id="card-public-link" href="#" target="_blank" style="word-break:break-all; color:var(--accent-dark); font-weight:600;"></a>
+        <button onclick="downloadQR()" style="max-width:250px;">Descargar Código QR (PNG)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. VISTA PÚBLICA DE LA TARJETA INTERACTIVA -->
+  <div id="view-card" class="hidden">
+    <!-- Pantalla inicial con sobre animado -->
+    <div class="envelope-screen" id="envelope">
+      <h1 id="env-title" style="font-size:2.4rem; margin-bottom:20px;">Tienes una sorpresa</h1>
+      <div class="envelope-box" onclick="openEnvelope()"></div>
+    </div>
+
+    <div class="container">
+      <div class="panel" style="text-align:center;">
+        <h1 id="card-title" style="font-size:2.5rem; color:var(--accent-dark);"></h1>
+        <p style="opacity:0.75; margin-top:4px;">Juntos desde el <span id="card-start-date"></span></p>
+
+        <!-- Contador en tiempo real -->
+        <div class="counter-grid">
+          <div class="counter-box"><span id="cnt-days">0</span><small>Días</small></div>
+          <div class="counter-box"><span id="cnt-hours">0</span><small>Horas</small></div>
+          <div class="counter-box"><span id="cnt-mins">0</span><small>Min</small></div>
+          <div class="counter-box"><span id="cnt-secs">0</span><small>Seg</small></div>
+        </div>
+
+        <!-- Carrusel de hasta 25 fotos -->
+        <div class="swiper mySwiper" id="card-swiper">
+          <div class="swiper-wrapper" id="card-slides"></div>
+          <div class="swiper-pagination"></div>
+        </div>
+
+        <!-- Dedicatoria -->
+        <p id="card-message" style="line-height:1.7; font-size:1.05rem; white-space:pre-line; margin:20px 0;"></p>
+
+        <!-- Mensaje interactivo oculto -->
+        <div class="secret-note" id="secret-box" onclick="revealSecret()">
+          ✨ <strong>Toca aquí para descubrir un mensaje secreto</strong> ✨
+        </div>
+
+        <!-- Reproductor de Audio / YouTube -->
+        <div id="music-player-area" style="margin-top:20px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+    // ⚠️ PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE ⚠️
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "TU_PROYECTO.firebaseapp.com",
+      projectId: "TU_PROYECTO",
+      storageBucket: "TU_PROYECTO.appspot.com",
+      messagingSenderId: "TU_SENDER_ID",
+      appId: "TU_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    let currentUser = null;
+    let existingPhotos = [];
+    let existingMusicUrl = "";
+    let secretText = "";
+
+    // Generar partículas flotantes
+    const particlesContainer = document.getElementById('particles');
+    for (let i = 0; i < 18; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 14 + 8 + 'px';
+      p.style.width = size; p.style.height = size;
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (Math.random() * 8 + 7) + 's';
+      p.style.animationDelay = (Math.random() * 5) + 's';
+      particlesContainer.appendChild(p);
+    }
+
+    // Revisar si la URL pide mostrar una tarjeta (?tarjeta=nombre-unico)
+    const params = new URLSearchParams(window.location.search);
+    const cardSlug = params.get('tarjeta');
+
+    if (cardSlug) {
+      document.getElementById('view-login').classList.add('hidden');
+      loadPublicCard(cardSlug);
+    } else {
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          currentUser = user;
+          document.getElementById('view-login').classList.add('hidden');
+          document.getElementById('view-editor').classList.remove('hidden');
+          loadUserExistingData(user.uid);
+        } else {
+          document.getElementById('view-login').classList.remove('hidden');
+          document.getElementById('view-editor').classList.add('hidden');
+        }
+      });
+    }
+
+    // Funciones globales para HTML
+    window.applyTheme = (theme) => {
+      document.body.className = theme;
+    };
+
+    window.toggleMusicInputs = () => {
+      const type = document.getElementById('edit-music-type').value;
+      document.getElementById('edit-yt-url').classList.toggle('hidden', type !== 'youtube');
+      document.getElementById('edit-mp3-file').classList.toggle('hidden', type !== 'mp3');
+    };
+
+    window.loginUser = async () => {
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-pass').value;
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch (e) {
+        document.getElementById('login-error').innerText = "Acceso denegado. Verifica tus credenciales de suscriptor.";
+      }
+    };
+
+    window.logoutUser = () => signOut(auth);
+
+    window.previewSelectedPhotos = (e) => {
+      const files = Array.from(e.target.files).slice(0, 25);
+      document.getElementById('photo-count-info').innerText = `${files.length} / 25 fotos seleccionadas`;
+      const grid = document.getElementById('photo-previews');
+      grid.innerHTML = '';
+      files.forEach(file => {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        grid.appendChild(img);
+      });
+    };
+
+    // Comprimir imagen antes de subir para ahorrar espacio en plan gratuito
+    function compressImage(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxW = 1080;
+            const scale = Math.min(1, maxW / img.width);
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8);
+          };
+        };
+      });
+    }
+
+    async function loadUserExistingData(uid) {
+      const userMapSnap = await getDoc(doc(db, "usuarios_tarjetas", uid));
+      if (userMapSnap.exists()) {
+        const slug = userMapSnap.data().slug;
+        const cardSnap = await getDoc(doc(db, "tarjetas", slug));
+        if (cardSnap.exists()) {
+          const d = cardSnap.data();
+          document.getElementById('edit-slug').value = slug;
+          document.getElementById('edit-theme').value = d.theme || 'tema-rosa';
+          applyTheme(d.theme || 'tema-rosa');
+          document.getElementById('edit-title').value = d.title || '';
+          document.getElementById('edit-date').value = d.startDate || '';
+          document.getElementById('edit-message').value = d.message || '';
+          document.getElementById('edit-secret').value = d.secret || '';
+          document.getElementById('edit-anim').value = d.anim || 'slide';
+          existingPhotos = d.photos || [];
+          existingMusicUrl = d.musicUrl || '';
+          generateQRView(slug);
+        }
+      }
+    }
+
+    window.saveCard = async () => {
+      const status = document.getElementById('save-status');
+      const rawSlug = document.getElementById('edit-slug').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      if (!rawSlug) return alert("Por favor escribe un nombre único para el enlace.");
+
+      status.innerText = "Subiendo archivos y guardando tarjeta... Por favor espera.";
+      document.getElementById('btn-save').disabled = true;
+
+      try {
+        // 1. Subir hasta 25 fotos si eligió nuevas
+        const photoFiles = Array.from(document.getElementById('edit-photos').files).slice(0, 25);
+        let photoUrls = existingPhotos;
+        if (photoFiles.length > 0) {
+          photoUrls = [];
+          for (let i = 0; i < photoFiles.length; i++) {
+            const compressed = await compressImage(photoFiles[i]);
+            const storageRef = ref(storage, `tarjetas/${rawSlug}/foto_${i}_${Date.now()}.jpg`);
+            await uploadBytes(storageRef, compressed);
+            const url = await getDownloadURL(storageRef);
+            photoUrls.push(url);
+          }
+        }
+
+        // 2. Música
+        const musicType = document.getElementById('edit-music-type').value;
+        let musicUrl = existingMusicUrl;
+        if (musicType === 'youtube') {
+          musicUrl = document.getElementById('edit-yt-url').value.trim();
+        } else if (musicType === 'mp3') {
+          const mp3File = document.getElementById('edit-mp3-file').files[0];
+          if (mp3File) {
+            const audioRef = ref(storage, `tarjetas/${rawSlug}/musica_${Date.now()}.mp3`);
+            await uploadBytes(audioRef, mp3File);
+            musicUrl = await getDownloadURL(audioRef);
+          }
+        } else if (musicType === 'none') {
+          musicUrl = "";
+        }
+
+        // 3. Guardar datos en Firestore
+        const cardData = {
+          ownerUid: currentUser.uid,
+          theme: document.getElementById('edit-theme').value,
+          title: document.getElementById('edit-title').value,
+          startDate: document.getElementById('edit-date').value,
+          message: document.getElementById('edit-message').value,
+          secret: document.getElementById('edit-secret').value,
+          anim: document.getElementById('edit-anim').value,
+          photos: photoUrls,
+          musicType,
+          musicUrl
+        };
+
+        await setDoc(doc(db, "tarjetas", rawSlug), cardData);
+        await setDoc(doc(db, "usuarios_tarjetas", currentUser.uid), { slug: rawSlug });
+
+        status.innerText = "¡Guardado con éxito!";
+        generateQRView(rawSlug);
+      } catch (err) {
+        console.error(err);
+        status.innerText = "Error al guardar: " + err.message;
+      } finally {
+        document.getElementById('btn-save').disabled = false;
+      }
+    };
+
+    function generateQRView(slug) {
+      const fullUrl = `${window.location.origin}${window.location.pathname}?tarjeta=${slug}`;
+      const qrBox = document.getElementById('qrcode');
+      qrBox.innerHTML = '';
+      new QRCode(qrBox, { text: fullUrl, width: 200, height: 200 });
+      const linkEl = document.getElementById('card-public-link');
+      linkEl.href = fullUrl;
+      linkEl.innerText = fullUrl;
+      document.getElementById('qr-container').classList.remove('hidden');
+    }
+
+    window.downloadQR = () => {
+      const canvas = document.querySelector('#qrcode canvas');
+      if (!canvas) return;
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL("image/png");
+      a.download = "codigo-qr-tarjeta.png";
+      a.click();
+    };
+
+    // CARGAR TARJETA PÚBLICA
+    async function loadPublicCard(slug) {
+      const snap = await getDoc(doc(db, "tarjetas", slug));
+      if (!snap.exists()) {
+        document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>Tarjeta no encontrada o suscripción inactiva.</h2>";
+        return;
+      }
+      const d = snap.data();
+      applyTheme(d.theme || 'tema-rosa');
+      document.getElementById('view-card').classList.remove('hidden');
+      document.getElementById('env-title').innerText = d.title || "Tienes una tarjeta especial";
+      document.getElementById('card-title').innerText = d.title;
+      document.getElementById('card-start-date').innerText = d.startDate;
+      document.getElementById('card-message').innerText = d.message;
+      secretText = d.secret || "¡Eres lo mejor que me ha pasado!";
+
+      // Iniciar contador de días juntos
+      if (d.startDate) {
+        const start = new Date(d.startDate + "T00:00:00").getTime();
+        setInterval(() => {
+          const diff = Date.now() - start;
+          if (diff > 0) {
+            document.getElementById('cnt-days').innerText = Math.floor(diff / (1000 * 60 * 60 * 24));
+            document.getElementById('cnt-hours').innerText = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            document.getElementById('cnt-mins').innerText = Math.floor((diff / 1000 / 60) % 60);
+            document.getElementById('cnt-secs').innerText = Math.floor((diff / 1000) % 60);
+          }
+        }, 1000);
+      }
+
+      // Cargar carrusel de fotos con la animación elegida
+      const slidesWrapper = document.getElementById('card-slides');
+      if (d.photos && d.photos.length > 0) {
+        d.photos.forEach(url => {
+          slidesWrapper.innerHTML += `<div class="swiper-slide"><img src="${url}" loading="lazy"/></div>`;
+        });
+        new Swiper(".mySwiper", {
+          effect: d.anim || "slide",
+          grabCursor: true,
+          loop: d.photos.length > 1,
+          autoplay: { delay: 3000 },
+          pagination: { el: ".swiper-pagination", clickable: true }
+        });
+      } else {
+        document.getElementById('card-swiper').classList.add('hidden');
+      }
+
+      // Cargar Música
+      const musicArea = document.getElementById('music-player-area');
+      if (d.musicType === 'mp3' && d.musicUrl) {
+        musicArea.innerHTML = `<audio id="bg-audio" controls loop style="width:100%;"><source src="${d.musicUrl}" type="audio/mpeg"></audio>`;
+      } else if (d.musicType === 'youtube' && d.musicUrl) {
+        const ytId = extractYouTubeID(d.musicUrl);
+        if (ytId) {
+          musicArea.innerHTML = `<iframe width="100%" height="120" src="https://www.youtube.com/embed/${ytId}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" style="border-radius:14px;"></iframe>`;
+        }
+      }
+    }
+
+    function extractYouTubeID(url) {
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^\?&"'>]+)/);
+      return match ? match[1] : null;
+    }
+
+    window.openEnvelope = () => {
+      document.getElementById('envelope').classList.add('opened');
+      const audio = document.getElementById('bg-audio');
+      if (audio) audio.play().catch(() => {});
+    };
+
+    window.revealSecret = () => {
+      const box = document.getElementById('secret-box');
+      box.innerHTML = `💖 <strong>${secretText}</strong> 💖`;
+      box.style.background = "var(--accent)";
+      box.style.color = "#fff";
+    };
+  </script>
+</body>
+</html>
